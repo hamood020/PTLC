@@ -89,3 +89,5 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 .modal{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:80;padding:20px;overflow:auto}.modal-card{max-width:1000px;margin:20px auto;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:0 20px 60px rgba(15,23,42,.18)}
 @media(max-width:1100px){.side{width:210px}.main{margin-right:210px;width:calc(100% - 210px);padding:20px}.cards{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:760px){.side{position:static;width:100%;height:auto}.app{display:block}.main{margin:0;width:100%;padding:15px}.side .nav{grid-template-columns:repeat(4,1fr)}.side .nav button span:last-child{display:none}.cards{grid-template-columns:1fr}.toolbar{flex-wrap:wrap}}
+
+.hidden{display:none!important}
