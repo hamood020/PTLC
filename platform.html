@@ -38,4 +38,22 @@ window.login=async function(){
  }finally{
    if(btn){btn.disabled=false;btn.textContent='دخول';}
  }
-};</script></body></html>
+};</script><script>
+(function(){
+ async function boot(){
+  try{
+   if(!window.__ICV_SB||!window.__ICV_LOAD){setTimeout(boot,200);return;}
+   const a=localStorage.getItem('icv_access_token'),q=localStorage.getItem('icv_refresh_token');
+   if(!a||!q)return;
+   const s=await window.__ICV_SB.auth.setSession({access_token:a,refresh_token:q});
+   if(s.error)throw s.error;
+   if(!s.data||!s.data.user)throw new Error('لم يتم إنشاء جلسة المستخدم');
+   await window.__ICV_LOAD(s.data.user);
+  }catch(e){
+   const m=document.getElementById('loginMsg');
+   if(m)m.innerHTML='<div class="error">تعذر فتح المنصة: '+String(e.message||e)+'</div>';
+  }
+ }
+ boot();
+})();
+</script></body></html>
