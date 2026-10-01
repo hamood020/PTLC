@@ -40,7 +40,7 @@ window.login=async function(){
     }
     localStorage.setItem('icv_access_token',d.access_token);
     localStorage.setItem('icv_refresh_token',d.refresh_token||'');
-    location.href='index.html?v=20261001-26';
+    location.href='platform.html?v=20261001-27';
   }catch(e){
     if(msg)msg.innerHTML='<div class="error">'+String(e.message||e)+'</div>';
   }finally{
