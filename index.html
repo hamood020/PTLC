@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>منصة متابعة المشاريع</title>
+</head>
+<body style="margin:0;background:#f5f7fb;font-family:Segoe UI,Tahoma,Arial">
+<div id="loading" style="min-height:100vh;display:grid;place-items:center;color:#344054">جاري تحميل منصة متابعة المشاريع...</div>
+<script>
+(async()=>{
+  try{
+    const r=await fetch("https://vnagbtgxxwgfdbpczlin.supabase.co/functions/v1/icv-web-proxy",{cache:"no-store"});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const html=await r.text();
+    document.open();
+    document.write(html);
+    document.close();
+  }catch(e){
+    document.getElementById("loading").innerHTML="<div>تعذر تحميل المنصة.<br><small>"+String(e.message||e)+"</small></div>";
+  }
+})();
+</script>
+</body>
+</html>
