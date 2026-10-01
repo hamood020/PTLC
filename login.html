@@ -12,7 +12,7 @@ document.getElementById('loginForm').addEventListener('submit',async function(e)
   if(!r.ok||!d.access_token){msg.textContent=(d.error_description||d.message||('فشل تسجيل الدخول - HTTP '+r.status));return}
   localStorage.setItem('icv_access_token',d.access_token);
   localStorage.setItem('icv_refresh_token',d.refresh_token||'');
-  location.href='app-final.html?session=1';
+  location.href='app-final.html?session=1&v=20261001-20';
  }catch(err){msg.textContent='تعذر الاتصال: '+(err.message||err)}
  finally{btn.disabled=false;btn.textContent='دخول'}
 });
