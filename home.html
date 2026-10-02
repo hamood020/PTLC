@@ -119,9 +119,10 @@ function renderProjects(){
 }
 async function loadSimple(table,id){
  const box=$(id);box.innerHTML='<div class="loading">جاري التحميل...</div>';
- const r=await sb.from(table).select("*").order("name");
- if(r.error){box.innerHTML='<div class="error">'+esc(r.error.message)+'</div>';return}
- box.innerHTML='<table><thead><tr><th>الاسم</th></tr></thead><tbody>'+((r.data||[]).map(x=>'<tr><td>'+esc(x.name)+'</td></tr>').join("")||'<tr><td>لا توجد بيانات</td></tr>')+'</tbody></table>';
+ try{
+  const data=await apiFetch("/"+table+"?select=*&order=name");
+  box.innerHTML='<table><thead><tr><th>الاسم</th></tr></thead><tbody>'+((data||[]).map(x=>'<tr><td>'+esc(x.name)+'</td></tr>').join("")||'<tr><td>لا توجد بيانات</td></tr>')+'</tbody></table>';
+ }catch(e){box.innerHTML='<div class="error">'+esc(e.message||e)+'</div>'}
 }
 function renderProfile(){
  $("profileBox").innerHTML='<table><tbody><tr><th>اسم المستخدم</th><td>'+esc(profile?.username)+'</td></tr><tr><th>الاسم</th><td>'+esc(profile?.display_name)+'</td></tr><tr><th>الصلاحية</th><td>'+esc(profile?.role)+'</td></tr><tr><th>حالة الحساب</th><td>'+((profile?.is_active)?'نشط':'غير نشط')+'</td></tr></tbody></table>';
