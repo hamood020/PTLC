@@ -179,7 +179,67 @@ async function showDateExtensionHistory(){const {data,error}=await sb.from('proj
 async function saveProjectEdit(){const oldEnd=(currentProjectId&&window.__currentProjectEndDate)||null;const newEnd=document.getElementById('ep_end').value||null;const endReason=(document.getElementById('ep_end_reason')?.value||'').trim()||null;const upd={project_name:document.getElementById('ep_name').value.trim(),tender_no:document.getElementById('ep_tender').value.trim()||null,government_entity_id:document.getElementById('ep_entity').value||null,company_id:document.getElementById('ep_company').value||null,consultant:document.getElementById('ep_consultant').value.trim()||null,project_value:Number(document.getElementById('ep_value').value||0),start_date:document.getElementById('ep_start').value||null,end_date:newEnd,project_status:document.getElementById('ep_status').value.trim()||null,work_sector:document.getElementById('ep_sector').value.trim()||null,governorate:document.getElementById('ep_gov').value.trim()||null,wilayat:document.getElementById('ep_wilayat').value.trim()||null,completion_percent:Number(document.getElementById('ep_completion').value||0),updated_at:new Date().toISOString()};if(!upd.project_name||!upd.government_entity_id){msg('editProjectMsg','اسم المشروع والجهة الحكومية مطلوبان.');return}const {error}=await sb.from('projects').update(upd).eq('id',currentProjectId);if(error){msg('editProjectMsg',error.message);return}if(oldEnd!==newEnd&&newEnd&&endReason){const latest=await sb.from('project_date_extensions').select('id').eq('project_id',currentProjectId).order('created_at',{ascending:false}).limit(1).maybeSingle();if(latest.data?.id){await sb.from('project_date_extensions').update({reason:endReason,amendment_date:new Date().toISOString().slice(0,10)}).eq('id',latest.data.id)}}msg('editProjectMsg','تم تحديث البيانات وتسجيل تعديل تاريخ الانتهاء في السجل.','success');await refreshProjectDetail();await loadProjects();await loadDashboard();setTimeout(closeEditProject,500)}
 
 
-async async function login(){let u=document.getElementById('username').value.trim(),p=document.getElementById('password').value;if(!u||!p)return err('أدخل اسم المستخدم وكلمة المرور.');let r=await sb.auth.signInWithPassword({email:email(u),password:p});if(r.error)return err('تعذر تسجيل الدخول. تأكد من اسم المستخدم وكلمة المرور.');await load(r.data.user)}async function load(user){let r=await sb.from('user_profiles').select('*').eq('user_id',user.id).maybeSingle();if(r.error||!r.data||!r.data.is_active){await sb.auth.signOut();return err('الحساب غير نشط أو لا يملك صلاحية دخول.')}let p=r.data,n=new Date(),s=p.access_starts_at&&new Date(p.access_starts_at),e=p.access_expires_at&&new Date(p.access_expires_at);if(s&&n<s||e&&n>=e){await sb.auth.signOut();return err('انتهت أو لم تبدأ صلاحية الحساب.')}document.getElementById('loginPage').classList.add('hidden');document.getElementById('app').classList.remove('hidden');window.currentProfile=p;userName.textContent=p.display_name||p.username;userRole.textContent=p.role;if(p.role==='admin')document.getElementById('userAdminNav').classList.remove('hidden');loadDashboard();loadProfile()}
+async function login(){
+  const u=document.getElementById('username').value.trim().toLowerCase();
+  const p=document.getElementById('password').value;
+  if(!u||!p)return err('أدخل اسم المستخدم وكلمة المرور.');
+  const btn=document.querySelector('#loginPage button');
+  if(btn){btn.disabled=true;btn.textContent='جارٍ تسجيل الدخول...';}
+  try{
+    const r=await fetch('https://vnagbtgxxwgfdbpczlin.supabase.co/functions/v1/auth-login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify({email:u+'@icv-platform.local',password:p})
+    });
+    const t=await r.text();let d={};try{d=JSON.parse(t)}catch(_){}
+    if(!r.ok||!d.access_token)return err(d.error_description||d.message||'تعذر تسجيل الدخول. تأكد من اسم المستخدم وكلمة المرور.');
+    localStorage.setItem('icv_access_token',d.access_token);
+    localStorage.setItem('icv_refresh_token',d.refresh_token||'');
+    localStorage.setItem('icv_login_username',u);
+    const s=await sb.auth.setSession({access_token:d.access_token,refresh_token:d.refresh_token||''});
+    if(s.error)return err('تم تسجيل الدخول لكن تعذر إنشاء جلسة المنصة: '+s.error.message);
+    await load(s.data.user);
+  }catch(e){err('تعذر الاتصال بخدمة تسجيل الدخول.');}
+  finally{if(btn){btn.disabled=false;btn.textContent='دخول';}}
+}
+async function load(user){
+  let r=await sb.rpc('get_my_profile');
+  let p=Array.isArray(r.data)?r.data[0]:r.data;
+  if(r.error||!p||!p.is_active){
+    await sb.auth.signOut();
+    return err(r.error?'تعذر قراءة صلاحيات الحساب: '+r.error.message:'الحساب غير نشط أو لا يملك صلاحية دخول.');
+  }
+  const n=new Date(),s=p.access_starts_at&&new Date(p.access_starts_at),e=p.access_expires_at&&new Date(p.access_expires_at);
+  if((s&&n<s)||(e&&n>=e)){
+    await sb.auth.signOut();
+    return err('انتهت أو لم تبدأ صلاحية الحساب.');
+  }
+  document.getElementById('loginPage').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  window.currentProfile=p;
+  userName.textContent=p.display_name||p.username||user?.email||'';
+  userRole.textContent=p.role||'';
+  if(p.role==='admin')document.getElementById('userAdminNav').classList.remove('hidden');
+  loadDashboard();
+  loadProfile();
+}
+async function initAuth(){
+  try{
+    const access=localStorage.getItem('icv_access_token');
+    const refresh=localStorage.getItem('icv_refresh_token');
+    if(access&&refresh){
+      const s=await sb.auth.setSession({access_token:access,refresh_token:refresh});
+      if(!s.error&&s.data?.user){await load(s.data.user);return;}
+      localStorage.removeItem('icv_access_token');
+      localStorage.removeItem('icv_refresh_token');
+    }
+    const s=await sb.auth.getSession();
+    if(s.data?.session?.user)await load(s.data.session.user);
+  }catch(e){
+    console.error(e);
+  }
+}
+initAuth();
 async function loadDashboard(){const r=await sb.from('project_dashboard').select('*');if(r.error){summaryBody.innerHTML='<tr><td colspan="3">'+esc(r.error.message)+'</td></tr>';return}window.dashboardCache=r.data||[];const years=[...new Set(window.dashboardCache.flatMap(x=>{const m=String(x.latest_report||'').match(/(\d{4})/);return m?[m[1]]:[]}))].sort();const fill=(id,items,placeholder)=>{const el=document.getElementById(id),old=el.value;el.innerHTML='<option value="">'+placeholder+'</option>'+items.map(x=>`<option value="${esc(x.value??x)}">${esc(x.label??x)}</option>`).join('');if([...el.options].some(o=>o.value===old))el.value=old};fill('dashYear',years,'كل السنوات');fill('dashEntity',[...new Map(window.dashboardCache.map(x=>[x.government_entity_id,x.government_entity]).filter(x=>x[0])).entries()].map(([value,label])=>({value,label})).sort((a,b)=>a.label.localeCompare(b.label)),'كل الجهات');fill('dashSector',[...new Set(window.dashboardCache.map(x=>x.work_sector).filter(Boolean))].sort(),'كل القطاعات');fill('dashGov',[...new Set(window.dashboardCache.map(x=>x.governorate).filter(Boolean))].sort(),'كل المحافظات');await renderDashboard()}
 async function renderDashboard(){const year=dashYear.value?Number(dashYear.value):null,entity=dashEntity.value||null,sector=dashSector.value||null,gov=dashGov.value||null,status=dashStatus.value||null;const [sum,statusR,lcR,svcR,trendR]=await Promise.all([sb.rpc('dashboard_filtered_summary',{p_year:year,p_government_entity_id:entity,p_work_sector:sector,p_governorate:gov,p_project_status:status}),sb.rpc('dashboard_status_breakdown',{p_year:year,p_government_entity_id:entity,p_work_sector:sector,p_governorate:gov}),sb.rpc('dashboard_lc_breakdown',{p_year:year,p_government_entity_id:entity,p_work_sector:sector,p_governorate:gov}),sb.rpc('dashboard_services_breakdown',{p_year:year,p_government_entity_id:entity,p_work_sector:sector,p_governorate:gov}),sb.rpc('dashboard_lc_trend_filtered',{p_year:year,p_government_entity_id:entity,p_work_sector:sector,p_governorate:gov,p_project_status:status})]);if(sum.error){summaryBody.innerHTML='<tr><td colspan="3">'+esc(sum.error.message)+'</td></tr>';return}const x=sum.data?.[0]||{};cProjects.textContent=fmt(x.total_projects||0);cValue.textContent=fmt(x.total_project_value||0);cLC.textContent=fmt(x.total_local_content||0);cLCpct.textContent=x.lc_percent_project_value==null?'—':Number(x.lc_percent_project_value).toFixed(1)+'%';const total=Number(x.total_projects||0);const byStatus=new Map((statusR.data||[]).map(r=>[r.project_status,Number(r.project_count||0)]));projectStatusBody.innerHTML=['مسند','قيد التنفيذ','منتهي','متعثر'].map(st=>{const c=byStatus.get(st)||0;return`<tr><td>${st}</td><td>${fmt(c)}</td><td>${pct(c,total)}</td></tr>`}).join('');summaryBody.innerHTML=[['مشاريع مستوفية',x.compliant_projects||0,pct(x.compliant_projects||0,total)],['مشاريع غير مستوفية',x.non_compliant_projects||0,pct(x.non_compliant_projects||0,total)],['لا يوجد تقرير',x.no_report_projects||0,pct(x.no_report_projects||0,total)],['تقارير مفقودة',x.projects_with_missing_reports||0,'—']].map(r=>`<tr><td>${r[0]}</td><td>${fmt(r[1])}</td><td>${r[2]}</td></tr>`).join('');workforceBody.innerHTML=`<tr><td>العمانيون</td><td>${fmt(x.omani_count||0)}</td></tr><tr><td>غير العمانيين</td><td>${fmt(x.foreign_count||0)}</td></tr><tr><td>إجمالي العمالة</td><td>${fmt((Number(x.omani_count||0)+Number(x.foreign_count||0)))}</td></tr><tr><td>نسبة التعمين</td><td>${x.omanization_percent==null?'—':Number(x.omanization_percent).toFixed(1)+'%'}</td></tr>`;lcCategoriesBody.innerHTML=(lcR.data||[]).map(r=>`<tr><td>${esc(r.category)}</td><td>${fmt(r.amount||0)}</td></tr>`).join('')||'<tr><td colspan="2" class="empty">لا توجد بيانات</td></tr>';servicesBody.innerHTML=(svcR.data||[]).map(r=>`<tr><td>${esc(r.category)}</td><td>${fmt(r.amount||0)}</td></tr>`).join('')||'<tr><td colspan="2" class="empty">لا توجد بيانات</td></tr>';trendBody.innerHTML=(trendR.data||[]).map(r=>`<tr><td>Year ${r.year_no} - Q${r.quarter_no}</td><td>${fmt(r.total_expenditure||0)}</td><td>${fmt(r.total_local_content||0)}</td><td>${r.local_content_percent==null?'—':Number(r.local_content_percent).toFixed(1)+'%'}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">لا توجد بيانات</td></tr>'}
 function resetDashboardFilters(){dashYear.value='';dashEntity.value='';dashSector.value='';dashGov.value='';dashStatus.value='';renderDashboard()}
