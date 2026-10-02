@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PTLC | منصة متابعة المشاريع والمحتوى المحلي</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:#073f3b;color:#102a43}
 .page{min-height:100vh;display:grid;grid-template-columns:1.15fr .85fr;background:linear-gradient(135deg,#063f3a,#0b625b)}
@@ -56,7 +56,14 @@ button.login:disabled{opacity:.65;cursor:wait}
 <script>
 const SUPABASE_URL="https://vnagbtgxxwgfdbpczlin.supabase.co";
 const SUPABASE_KEY="sb_publishable_eEIjtP8AI3-8USprPyncag_yhO545W4";
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let sb=null;
+if(window.supabase?.createClient){
+  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+}else{
+  msg.textContent="تعذر تحميل خدمة تسجيل الدخول. أعد تحميل الصفحة.";
+  msg.className="msg error";
+  btn.disabled=true;
+}
 const form=document.getElementById("loginForm");
 const btn=document.getElementById("loginBtn");
 const msg=document.getElementById("msg");
@@ -71,6 +78,7 @@ form.addEventListener("submit",async e=>{
  const email=raw.includes("@")?raw.toLowerCase():raw.toLowerCase()+"@icv-platform.local";
  btn.disabled=true;btn.textContent="جارٍ تسجيل الدخول...";msg.className="msg";
  try{
+   if(!sb){show("تعذر تحميل خدمة تسجيل الدخول. أعد تحميل الصفحة.");return}
    const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
    if(error||!data.session||!data.user){show(error?.message==="Invalid login credentials"?"اسم المستخدم أو كلمة المرور غير صحيحة.":"تعذر تسجيل الدخول. تأكد من البيانات.");return}
    localStorage.setItem("icv_access_token",data.session.access_token);
