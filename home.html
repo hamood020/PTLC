@@ -69,8 +69,10 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px;border-bottom:1px s
 </main>
 </div>
 <script>
-const URL="https://vnagbtgxxwgfdbpczlin.supabase.co",KEY="sb_publishable_eEIjtP8AI3-8USprPyncag_yhO545W4";
-const sb=window.supabase?.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"ptlc-auth-session"}});
+const URL="https://vnagbtgxxwgfdbpczlin.supabase.co";
+const KEY="sb_publishable_eEIjtP8AI3-8USprPyncag_yhO545W4";
+const API=URL+"/rest/v1";
+const sb=null;
 let rows=[],profile=null;
 const $=id=>document.getElementById(id);
 const num=v=>Number(v||0);
@@ -87,7 +89,7 @@ function showPage(name){
  if(name==="projects")renderProjects();if(name==="entities")loadSimple("government_entities","entitiesBox");if(name==="companies")loadSimple("companies","companiesBox");if(name==="profile")renderProfile();
 }
 document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>showPage(b.dataset.page));
-$("logout").onclick=async()=>{await sb.auth.signOut();location.href="./index.html?logout=1"};
+$("logout").onclick=()=>{localStorage.removeItem("icv_access_token");localStorage.removeItem("icv_refresh_token");localStorage.removeItem("icv_username");location.href="./index.html?logout=1"};
 $("statusFilter").onchange=renderDashboard;$("entityFilter").onchange=renderDashboard;$("sectorFilter").onchange=renderDashboard;
 
 function filtered(){
@@ -124,28 +126,38 @@ async function loadSimple(table,id){
 function renderProfile(){
  $("profileBox").innerHTML='<table><tbody><tr><th>اسم المستخدم</th><td>'+esc(profile?.username)+'</td></tr><tr><th>الاسم</th><td>'+esc(profile?.display_name)+'</td></tr><tr><th>الصلاحية</th><td>'+esc(profile?.role)+'</td></tr><tr><th>حالة الحساب</th><td>'+((profile?.is_active)?'نشط':'غير نشط')+'</td></tr></tbody></table>';
 }
+async function apiFetch(path,options={}){
+ const token=localStorage.getItem("icv_access_token");
+ if(!token) throw new Error("انتهت جلسة الدخول.");
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),10000);
+ try{
+  const r=await fetch(API+path,{...options,signal:controller.signal,headers:{apikey:KEY,Authorization:"Bearer "+token,...(options.headers||{})}});
+  if(r.status===401||r.status===403) throw new Error("انتهت جلسة الدخول أو لا توجد صلاحية.");
+  const text=await r.text();
+  let data=null;try{data=text?JSON.parse(text):null}catch{data=text}
+  if(!r.ok) throw new Error(data?.message||data?.hint||data?.error_description||data?.error||("HTTP "+r.status));
+  return data;
+ }catch(e){if(e.name==="AbortError")throw new Error("انتهى وقت الاتصال بخدمة المنصة.");throw e}
+ finally{clearTimeout(timer)}
+}
 async function boot(){
  try{
-  if(!sb) throw new Error("تعذر تحميل خدمة المنصة.");
   const access=localStorage.getItem("icv_access_token");
-  const refresh=localStorage.getItem("icv_refresh_token");
-  if(!access||!refresh){location.replace("./index.html?v=10");return}
-  const restored=await sb.auth.setSession({access_token:access,refresh_token:refresh});
-  if(restored.error||!restored.data.session) throw restored.error||new Error("انتهت جلسة الدخول.");
-  $("userName").textContent="جارٍ التحميل...";
-  const pr=await sb.rpc("get_my_profile");
-  if(pr.error)throw pr.error;
-  profile=Array.isArray(pr.data)?pr.data[0]:pr.data;
+  if(!access){location.replace("./index.html?v=10");return}
+  $("userName").textContent="جارٍ التحقق...";
+  const pr=await apiFetch("/rpc/get_my_profile",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
+  profile=Array.isArray(pr)?pr[0]:pr;
   if(!profile||profile.is_active===false)throw new Error("الحساب غير نشط أو لا يملك صلاحية دخول.");
-  $("userName").textContent=profile.display_name||profile.username||restored.data.session.user.email;
+  $("userName").textContent=profile.display_name||profile.username||localStorage.getItem("icv_username")||"مستخدم";
   $("userRole").textContent=profile.role||"مستخدم";
-  const q=await sb.from("project_dashboard").select("*");
-  if(q.error)throw q.error;
-  rows=q.data||[];
+  const q=await apiFetch("/project_dashboard?select=*");
+  rows=Array.isArray(q)?q:[];
   fillFilters();renderDashboard();
   $("dashLoading").classList.add("hidden");$("dashContent").classList.remove("hidden");$("loading").classList.add("hidden");$("app").classList.remove("hidden");
  }catch(e){
-  $("loading").innerHTML='<div class="error">تعذر فتح المنصة: '+esc(e.message||e)+'</div><div style="margin-top:15px"><button onclick="location.href=\'./index.html?v=10\'">العودة لتسجيل الدخول</button></div>';
+  const msg=e?.message||String(e);
+  $("loading").innerHTML='<div class="error">تعذر فتح المنصة: '+esc(msg)+'</div><div style="margin-top:15px"><button onclick="location.href=\'./index.html?v=10\'">العودة لتسجيل الدخول</button></div>';
  }
 }
 boot();
