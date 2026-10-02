@@ -127,9 +127,19 @@ function renderProfile(){
 async function boot(){
  try{
   if(!sb) throw new Error("تعذر تحميل خدمة المنصة.");
-  const {data,error}=await sb.auth.getSession();
-  if(error)throw error;
-  if(!data.session){location.replace("./index.html?v=7&login=required");return}
+  const access=localStorage.getItem("icv_access_token");
+  const refresh=localStorage.getItem("icv_refresh_token");
+  let session=null;
+  if(access && refresh){
+    const restored=await sb.auth.setSession({access_token:access,refresh_token:refresh});
+    if(restored.error) throw restored.error;
+    session=restored.data.session;
+  }else{
+    const current=await sb.auth.getSession();
+    if(current.error) throw current.error;
+    session=current.data.session;
+  }
+  if(!session){location.replace("./index.html?v=8&login=required");return}
   $("userName").textContent="جارٍ التحميل...";
   const pr=await sb.rpc("get_my_profile");
   if(pr.error)throw pr.error;
