@@ -85,7 +85,7 @@ form.addEventListener("submit",async e=>{
    localStorage.setItem("icv_refresh_token",data.session.refresh_token);
    localStorage.setItem("icv_username",raw);
    show("تم تسجيل الدخول، جارٍ فتح المنصة...","ok");
-   window.location.href="platform.html?v=6";
+   window.location.href="dashboard.html?v=1";
  }catch(err){show("تعذر الاتصال بخدمة تسجيل الدخول.");}
  finally{btn.disabled=false;btn.textContent="دخول";}
 });
