@@ -70,7 +70,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px;border-bottom:1px s
 </div>
 <script>
 const URL="https://vnagbtgxxwgfdbpczlin.supabase.co",KEY="sb_publishable_eEIjtP8AI3-8USprPyncag_yhO545W4";
-const sb=supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+const sb=supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"ptlc-auth-session"} });
 let rows=[],profile=null;
 const $=id=>document.getElementById(id);
 const num=v=>Number(v||0);
@@ -128,7 +128,7 @@ async function boot(){
  try{
   const {data,error}=await sb.auth.getSession();
   if(error)throw error;
-  if(!data.session){location.replace("./index.html?login=required");return}
+  if(!data.session){location.replace("./index.html?v=6&login=required");return}
   $("userName").textContent="جارٍ التحميل...";
   const pr=await sb.rpc("get_my_profile");
   if(pr.error)throw pr.error;
