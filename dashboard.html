@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PTLC | لوحة متابعة المشاريع</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{--nav:#083f3b;--nav2:#0b756d;--bg:#f5f7fa;--card:#fff;--text:#172033;--muted:#667085;--line:#e7ebef;--good:#067647;--warn:#b54708;--bad:#b42318}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Segoe UI",Tahoma,Arial,sans-serif;color:var(--text)}
@@ -70,7 +70,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px;border-bottom:1px s
 </div>
 <script>
 const URL="https://vnagbtgxxwgfdbpczlin.supabase.co",KEY="sb_publishable_eEIjtP8AI3-8USprPyncag_yhO545W4";
-const sb=supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"ptlc-auth-session"} });
+const sb=window.supabase?.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"ptlc-auth-session"}});
 let rows=[],profile=null;
 const $=id=>document.getElementById(id);
 const num=v=>Number(v||0);
@@ -126,6 +126,7 @@ function renderProfile(){
 }
 async function boot(){
  try{
+  if(!sb) throw new Error("تعذر تحميل خدمة المنصة.");
   const {data,error}=await sb.auth.getSession();
   if(error)throw error;
   if(!data.session){location.replace("./index.html?v=7&login=required");return}
