@@ -58,7 +58,7 @@ const SUPABASE_URL="https://vnagbtgxxwgfdbpczlin.supabase.co";
 const SUPABASE_KEY="sb_publishable_eEIjtP8AI3-8USprPyncag_yhO545W4";
 let sb=null;
 if(window.supabase?.createClient){
-  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"ptlc-auth-session"}});
 }else{
   msg.textContent="تعذر تحميل خدمة تسجيل الدخول. أعد تحميل الصفحة.";
   msg.className="msg error";
