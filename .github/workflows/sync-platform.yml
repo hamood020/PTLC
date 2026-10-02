@@ -1,10 +1,6 @@
 name: Sync platform frontend
 
 on:
-  push:
-    paths-ignore:
-      - "index.html"
-      - "icv-followup/index.html"
   workflow_dispatch:
 
 permissions:
@@ -28,11 +24,11 @@ jobs:
           mkdir -p icv-followup
           cp index.html icv-followup/index.html
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git.config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html icv-followup/index.html
           if git diff --cached --quiet; then
             echo "No frontend changes."
             exit 0
           fi
-          git commit -m "Sync full ICV platform frontend"
+          git commit -m "Manual-only legacy frontend sync"
           git push
