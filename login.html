@@ -3,88 +3,201 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>تسجيل الدخول - منصة متابعة المشاريع</title>
+<title>تسجيل الدخول | منصة متابعة المشاريع</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
-:root{--bg:#f5f7fb;--card:#fff;--ink:#162033;--muted:#6b7280;--line:#e8edf4;--primary:#0f766e;--primary2:#0b5f59;--shadow:0 25px 70px rgba(0,0,0,.18)}
+:root{
+  --green:#0f766e;--green-dark:#0e2f2c;--green-2:#115e59;
+  --bg:#f5f7fb;--ink:#162033;--muted:#6b7280;--line:#e8edf4;
+  --red:#dc2626;
+}
 *{box-sizing:border-box}
-html,body{min-height:100%;margin:0}
-body{background:linear-gradient(135deg,#0e2f2c,#115e59);color:var(--ink);font-family:Cairo,Arial,sans-serif}
+html,body{margin:0;min-height:100%;font-family:Cairo,Arial,sans-serif}
+body{min-height:100vh;background:linear-gradient(135deg,var(--green-dark),var(--green-2));color:var(--ink)}
 button,input{font:inherit}
-.login{min-height:100vh;display:grid;place-items:center;padding:20px}
-.login-card{width:min(430px,100%);background:#fff;border-radius:22px;padding:34px;box-shadow:var(--shadow)}
-.logo{width:58px;height:58px;border-radius:16px;background:var(--primary);color:#fff;display:grid;place-items:center;font-size:20px;font-weight:800;margin-bottom:18px}
-h1{margin:0 0 8px;font-size:25px}
-.muted{color:var(--muted);font-size:12px}
-.field{margin:18px 0 12px}
-.field label{display:block;color:var(--muted);font-size:11px;font-weight:700;margin-bottom:6px}
-.field input{width:100%;height:42px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:0 11px;font-family:inherit;font-size:13px;outline:none}
-.field input:focus{border-color:#9bc9c4;box-shadow:0 0 0 3px rgba(15,118,110,.08)}
-.btn{width:100%;border:1px solid var(--primary);background:var(--primary);color:#fff;border-radius:11px;padding:11px 14px;font-family:inherit;cursor:pointer;font-weight:700;font-size:13px;margin-top:6px}
-.btn:hover{background:var(--primary2)}
-.btn:disabled{opacity:.65;cursor:wait}
-#msg{margin-top:13px;color:#dc2626;text-align:center;min-height:20px;font-size:11px}
-.brand-note{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);text-align:center;color:var(--muted);font-size:10px}
+.login-page{min-height:100vh;display:grid;place-items:center;padding:24px}
+.login-card{
+  width:min(430px,100%);background:#fff;border-radius:22px;
+  padding:34px;box-shadow:0 25px 70px rgba(0,0,0,.22)
+}
+.logo{
+  width:58px;height:58px;border-radius:16px;background:var(--green);
+  color:#fff;display:grid;place-items:center;font-size:20px;font-weight:800;
+  margin-bottom:18px
+}
+h1{margin:0 0 7px;font-size:24px;line-height:1.4}
+.subtitle{font-size:12px;color:var(--muted);margin-bottom:24px}
+.field{margin-bottom:15px}
+label{display:block;font-size:11px;font-weight:700;color:#475467;margin-bottom:6px}
+.input-wrap{position:relative}
+input{
+  width:100%;height:44px;border:1px solid var(--line);border-radius:10px;
+  padding:0 12px;background:#fff;color:var(--ink);outline:none;font-size:13px;
+  transition:.15s
+}
+input:focus{border-color:#8dc5bf;box-shadow:0 0 0 3px rgba(15,118,110,.08)}
+.login-btn{
+  width:100%;height:44px;border:0;border-radius:11px;
+  background:var(--green);color:#fff;font-weight:800;font-size:13px;
+  cursor:pointer;transition:.15s;margin-top:4px
+}
+.login-btn:hover{background:#0b5f59}
+.login-btn:disabled{opacity:.65;cursor:wait}
+.message{
+  min-height:22px;margin-top:13px;text-align:center;
+  color:var(--red);font-size:11px;line-height:1.7
+}
+.footer{
+  margin-top:18px;padding-top:14px;border-top:1px solid var(--line);
+  text-align:center;color:var(--muted);font-size:10px
+}
+.spinner{
+  display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.45);
+  border-top-color:#fff;border-radius:50%;vertical-align:-2px;margin-left:6px;
+  animation:spin .7s linear infinite
+}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
-<section class="login">
-<div class="login-card">
-<div class="logo">ICV</div>
-<h1>منصة متابعة المشاريع</h1>
-<div class="muted">تسجيل الدخول باسم المستخدم وكلمة المرور</div>
+<main class="login-page">
+<section class="login-card" aria-label="تسجيل الدخول">
+  <div class="logo">ICV</div>
+  <h1>منصة متابعة المشاريع</h1>
+  <div class="subtitle">تسجيل الدخول إلى منصة متابعة المشاريع والمحتوى المحلي</div>
 
-<form id="loginForm">
-<div class="field">
-<label for="u">اسم المستخدم</label>
-<input id="u" autocomplete="username" required autofocus>
-</div>
-<div class="field">
-<label for="p">كلمة المرور</label>
-<input id="p" type="password" autocomplete="current-password" required>
-</div>
-<button id="btn" class="btn" type="submit">دخول</button>
-</form>
+  <form id="loginForm" novalidate>
+    <div class="field">
+      <label for="username">اسم المستخدم</label>
+      <input id="username" name="username" type="text"
+             autocomplete="username" autocapitalize="none" spellcheck="false"
+             placeholder="أدخل اسم المستخدم" required>
+    </div>
 
-<div id="msg"></div>
-<div class="brand-note">منصة متابعة المشاريع والمحتوى المحلي</div>
-</div>
+    <div class="field">
+      <label for="password">كلمة المرور</label>
+      <div class="input-wrap">
+        <input id="password" name="password" type="password"
+               autocomplete="current-password" placeholder="أدخل كلمة المرور" required>
+      </div>
+    </div>
+
+    <button id="loginBtn" class="login-btn" type="submit">دخول</button>
+    <div id="message" class="message" role="alert" aria-live="polite"></div>
+  </form>
+
+  <div class="footer">منصة متابعة المشاريع والمحتوى المحلي</div>
 </section>
+</main>
 
 <script>
-const endpoint='https://vnagbtgxxwgfdbpczlin.supabase.co/functions/v1/auth-login';
+(function(){
+  'use strict';
 
-document.getElementById('loginForm').addEventListener('submit',async function(e){
- e.preventDefault();
- const btn=document.getElementById('btn'),msg=document.getElementById('msg');
- const u=document.getElementById('u').value.trim().toLowerCase(),p=document.getElementById('p').value;
- if(!u||!p){msg.textContent='أدخل اسم المستخدم وكلمة المرور.';return}
- btn.disabled=true;
- btn.textContent='جارٍ الاتصال...';
- msg.textContent='';
- try{
-  const r=await fetch(endpoint,{
-   method:'POST',
-   headers:{'Content-Type':'application/json'},
-   body:JSON.stringify({email:u+'@icv-platform.local',password:p})
-  });
-  const t=await r.text();
-  let d={};
-  try{d=JSON.parse(t)}catch(_){}
-  if(!r.ok||!d.access_token){
-   msg.textContent=d.error_description||d.message||('فشل تسجيل الدخول - HTTP '+r.status);
-   return;
+  const AUTH_ENDPOINT =
+    'https://vnagbtgxxwgfdbpczlin.supabase.co/functions/v1/auth-login';
+
+  const form = document.getElementById('loginForm');
+  const username = document.getElementById('username');
+  const password = document.getElementById('password');
+  const button = document.getElementById('loginBtn');
+  const message = document.getElementById('message');
+
+  function showMessage(text){
+    message.textContent = text || '';
   }
-  localStorage.setItem('icv_access_token',d.access_token);
-  localStorage.setItem('icv_refresh_token',d.refresh_token||'');
-  location.href='index.html?session=1&v=20261002-login';
- }catch(err){
-  msg.textContent='تعذر الاتصال: '+(err.message||err);
- }finally{
-  btn.disabled=false;
-  btn.textContent='دخول';
- }
-});
+
+  function setLoading(loading){
+    button.disabled = loading;
+    button.innerHTML = loading
+      ? '<span class="spinner"></span>جارٍ تسجيل الدخول...'
+      : 'دخول';
+  }
+
+  function normalizeUsername(value){
+    return String(value || '').trim().toLowerCase();
+  }
+
+  async function login(){
+    const user = normalizeUsername(username.value);
+    const pass = password.value || '';
+
+    showMessage('');
+
+    if(!user || !pass){
+      showMessage('أدخل اسم المستخدم وكلمة المرور.');
+      return;
+    }
+
+    setLoading(true);
+
+    try{
+      /*
+       * المنصة تستخدم اسم مستخدم، بينما Supabase Auth يستخدم email.
+       * Edge Function auth-login يحول:
+       * username -> username@icv-platform.local
+       */
+      const response = await fetch(AUTH_ENDPOINT,{
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'Accept':'application/json'
+        },
+        body:JSON.stringify({
+          email:user + '@icv-platform.local',
+          password:pass
+        })
+      });
+
+      const raw = await response.text();
+      let data = {};
+      try{
+        data = raw ? JSON.parse(raw) : {};
+      }catch(_){}
+
+      if(!response.ok || !data.access_token){
+        const error =
+          data.error_description ||
+          data.msg ||
+          data.message ||
+          data.error ||
+          ('تعذر تسجيل الدخول. رمز الخطأ: HTTP ' + response.status);
+        showMessage(error);
+        return;
+      }
+
+      /*
+       * حفظ جلسة الدخول قبل الانتقال إلى التطبيق.
+       * app-final/index سيقرأ هذه القيم ويستعيد جلسة المستخدم.
+       */
+      localStorage.setItem('icv_access_token', data.access_token);
+      localStorage.setItem('icv_refresh_token', data.refresh_token || '');
+      localStorage.setItem('icv_login_username', user);
+
+      window.location.replace('index.html?session=1&v=20261002-login');
+    }catch(error){
+      showMessage(
+        'تعذر الاتصال بخدمة تسجيل الدخول. تحقق من الاتصال بالإنترنت وحاول مرة أخرى.'
+      );
+    }finally{
+      setLoading(false);
+    }
+  }
+
+  form.addEventListener('submit',function(event){
+    event.preventDefault();
+    login();
+  });
+
+  password.addEventListener('keydown',function(event){
+    if(event.key === 'Enter'){
+      event.preventDefault();
+      form.requestSubmit();
+    }
+  });
+
+  username.focus();
+})();
 </script>
 </body>
 </html>
