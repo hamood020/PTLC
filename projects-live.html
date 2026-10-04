@@ -96,7 +96,7 @@ function draw(){
  const x=filtered();
  $("count").textContent=x.length+" مشروع";
  $("rows").innerHTML=x.map(p=>'<tr>'+
- '<td><a class="project-link" href="project.html?id='+encodeURIComponent(p.project_id)+'">'+esc(p.project_name)+'</a></td>'+
+ '<td><a class="project-link" href="project-live.html?id='+encodeURIComponent(p.project_id)+'">'+esc(p.project_name)+'</a></td>'+
  '<td>'+esc(p.government_entity)+'</td><td>'+esc(p.tender_no||"—")+'</td>'+
  '<td>'+money(p.project_value)+'</td>'+
  '<td><div class="progress"><span style="width:'+Math.min(100,num(p.completion_percent)*100)+'%"></span></div><small>'+pct(p.completion_percent)+'</small></td>'+
