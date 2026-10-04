@@ -1,0 +1,1 @@
+window.PTLC_CONFIG={url:"https://vnagbtgxxwgfdbpczlin.supabase.co",key:"sb_publishable_eEIjtP8AI3-8USprPyncag_yhO545W4",emailSuffix:"@icv-platform.local"};
