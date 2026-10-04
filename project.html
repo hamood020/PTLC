@@ -5,7 +5,7 @@
 <div class="app">
 <aside class="sidebar"><div class="brand"><div class="brand-mark">م</div><div><b>منصة متابعة المشاريع</b><small>المحتوى المحلي والمناقصات</small></div></div>
 <nav class="nav">
-<a href="index.html">⌂ <span>الرئيسية</span></a><a href="projects.html" class="active">▦ <span>المشاريع</span></a>
+<a href="index.html">⌂ <span>الرئيسية</span></a><a href="projects-live.html" class="active">▦ <span>المشاريع</span></a>
 <a href="entities.html">🏛 <span>الجهات الحكومية</span></a><a href="indicators.html">◈ <span>المؤشرات</span></a>
 <a href="companies.html">▣ <span>الشركات</span></a><a href="local-content.html">◫ <span>المحتوى المحلي</span></a>
 <a href="report-form.html">＋ <span>إدخال تقرير</span></a><a href="settings.html">⚙ <span>الإعدادات</span></a>
@@ -35,7 +35,7 @@ async function get(path){
 function row(a,b){return '<div class="data-row"><span>'+a+'</span><b>'+b+'</b></div>'}
 async function load(){
  const id=new URLSearchParams(location.search).get("id");
- if(!id){location.replace("projects.html");return}
+ if(!id){location.replace("projects-live.html");return}
  const q="?id=eq."+encodeURIComponent(id);
  const p=(await get("/projects"+q+"&select=*"))[0];
  if(!p)throw Error("المشروع غير موجود.");
@@ -50,7 +50,7 @@ async function load(){
  const plan=plans[0];
  const root=$("root");
  root.innerHTML=
- '<div class="hero"><h1>'+esc(p.project_name)+'</h1><div class="meta"><span>الجهة: <strong>'+esc(entity?.name||"—")+'</strong></span><span>المناقصة: <strong>'+esc(p.tender_no||"—")+'</strong></span></div><div class="actions" style="margin-top:15px"><a class="btn" href="projects.html">العودة للمشاريع</a><a class="btn primary" href="report-form.html?id='+encodeURIComponent(id)+'">+ إدخال تقرير</a></div></div>'+
+ '<div class="hero"><h1>'+esc(p.project_name)+'</h1><div class="meta"><span>الجهة: <strong>'+esc(entity?.name||"—")+'</strong></span><span>المناقصة: <strong>'+esc(p.tender_no||"—")+'</strong></span></div><div class="actions" style="margin-top:15px"><a class="btn" href="projects-live.html">العودة للمشاريع</a><a class="btn primary" href="report-form.html?id='+encodeURIComponent(id)+'">+ إدخال تقرير</a></div></div>'+
  '<div class="info-grid"><div class="info-item"><small>قيمة المشروع</small><b>'+money(p.project_value)+'</b></div><div class="info-item"><small>تاريخ البدء</small><b>'+esc(p.start_date||"—")+'</b></div><div class="info-item"><small>تاريخ الانتهاء</small><b>'+esc(p.end_date||"—")+'</b></div><div class="info-item"><small>الإنجاز</small><b>'+n(p.completion_percent*100).toFixed(1)+'%</b></div><div class="info-item"><small>الحالة</small><b>'+esc(p.project_status||"—")+'</b></div><div class="info-item"><small>الشركة المنفذة</small><b>'+esc(company?.name||"—")+'</b></div></div>'+
  '<div class="section"><div class="kpis"><div class="kpi"><div class="label">إجمالي الصرف</div><div class="value">'+money(r.total_expenditure)+'</div></div><div class="kpi"><div class="label">إجمالي المحتوى المحلي</div><div class="value">'+money(r.total_local_content)+'</div></div><div class="kpi"><div class="label">المحتوى المحلي / الصرف</div><div class="value">'+pct(r.local_content_expenditure_percent)+'</div></div><div class="kpi"><div class="label">المحتوى المحلي / قيمة المشروع</div><div class="value">'+pct(r.local_content_project_value_percent)+'</div></div></div></div>'+
  '<div class="grid2 section"><div class="card"><h2>العمالة والرواتب</h2>'+row("العمانيون",n(r.cumulative_omani_count))+row("غير العمانيين",n(r.cumulative_foreign_count))+row("نسبة التعمين",pct(r.omanization_percent))+row("رواتب العمانيين",money(r.omani_salary_actual))+row("رواتب الأجانب",money(r.foreign_salary_actual))+'</div><div class="card"><h2>نتائج المحتوى المحلي</h2>'+row("المشتريات",money(r.purchases_actual))+row("الخدمات",money(r.services_actual))+row("عقود الباطن",money(r.subcontracts_actual))+row("SME",pct(r.sme_percent))+'</div></div>'+
@@ -58,6 +58,6 @@ async function load(){
  '<div id="reports" class="section card"><div class="section-head"><h2>التقارير الربع سنوية</h2><a class="btn primary" href="report-form.html?id='+encodeURIComponent(id)+'">+ إدخال تقرير</a></div><div class="table-wrap"><table class="table"><thead><tr><th>الربع</th><th>السنة</th><th>التاريخ</th><th>النوع</th><th>الحالة</th><th>ملاحظات</th><th></th></tr></thead><tbody>'+[1,2,3,4].map(qn=>{const z=reports.find(x=>x.quarter_no===qn);return '<tr><td>Q'+qn+'</td><td>'+esc(z?.year_no||"—")+'</td><td>'+esc(z?.report_date||"—")+'</td><td>'+esc(z?.report_type||"—")+'</td><td>'+esc(z?.status||"غير مسجل")+'</td><td>'+esc(z?.notes||"")+'</td><td><a class="project-link" href="report-form.html?id='+encodeURIComponent(id)+'&q='+qn+'">'+(z?"عرض/تعديل":"إدخال")+'</a></td></tr>'}).join("")+'</tbody></table></div></div>';
  $("loading").hidden=true;root.hidden=false;
 }
-load().catch(e=>{$("loading").innerHTML='<div class="alert warn"><b>تعذر تحميل المشروع</b><br>'+esc(e.message)+'</div><div style="margin-top:12px"><a class="btn primary" href="projects.html">العودة للمشاريع</a></div>'});
+load().catch(e=>{$("loading").innerHTML='<div class="alert warn"><b>تعذر تحميل المشروع</b><br>'+esc(e.message)+'</div><div style="margin-top:12px"><a class="btn primary" href="projects-live.html">العودة للمشاريع</a></div>'});
 })();
 </script></body></html>
