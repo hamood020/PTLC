@@ -37,7 +37,7 @@ PTLC.ready.then(async()=>{
   }).join('');
   document.getElementById('dashRows').innerHTML=all.slice(0,6).map(p=>{
    const id=projectId.get(p['اسم المشروع']);
-   return '<tr><td><a class="project-link" href="project.html?id='+encodeURIComponent(id||'')+'">'+PTLC.esc(p['اسم المشروع'])+'</a></td><td>'+PTLC.esc(p['الجهة الحكومية'])+'</td><td>'+money(p['قيمة المشروع الاجمالي'])+'</td><td>'+pct(p['نسبة الانجاز'])+'</td><td>'+pct(p['نسبة المحتوى المحلي إلى قيمة المشروع'])+'</td><td>'+pct(p['نسبة SME   '])+'</td></tr>';
+   return '<tr><td><a class="project-link" href="project-live.html?id='+encodeURIComponent(id||'')+'">'+PTLC.esc(p['اسم المشروع'])+'</a></td><td>'+PTLC.esc(p['الجهة الحكومية'])+'</td><td>'+money(p['قيمة المشروع الاجمالي'])+'</td><td>'+pct(p['نسبة الانجاز'])+'</td><td>'+pct(p['نسبة المحتوى المحلي إلى قيمة المشروع'])+'</td><td>'+pct(p['نسبة SME   '])+'</td></tr>';
   }).join('');
  }catch(e){document.getElementById('dashRows').innerHTML='<tr><td colspan="6">تعذر تحميل بيانات المشاريع: '+PTLC.esc(e.message)+'</td></tr>'}
 });
