@@ -14,53 +14,5 @@
 <a href="companies.html">▣ <span>الشركات</span></a><a href="local-content.html">◫ <span>المحتوى المحلي</span></a>
 <a href="report-form.html">＋ <span>إدخال تقرير</span></a><a href="settings.html">⚙ <span>الإعدادات</span></a>
 </nav></aside>
-<main class="main">
-<div id="loading" class="card">جارٍ تحميل بيانات المشروع...</div>
-<div id="root" hidden></div>
-</main></div>
-<script src="data.js"></script>
-<script>
-(function(){
-"use strict";
-const C=window.PTLC_CONFIG||{},API=C.url+"/rest/v1",KEY=C.key,ACCESS="icv_access_token";
-const $=id=>document.getElementById(id);
-const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
-const n=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
-const money=v=>n(v).toLocaleString("en-US",{maximumFractionDigits:0})+" ر.ع";
-const pct=v=>(n(v)*100).toFixed(1)+"%";
-function row(a,b){return '<div class="data-row"><span>'+esc(a)+'</span><b>'+esc(b)+'</b></div>'}
-async function get(path){
- const token=localStorage.getItem(ACCESS);
- if(!token) throw Error("لا توجد جلسة دخول. سجل الدخول أولاً.");
- const res=await fetch(API+path,{headers:{apikey:KEY,Authorization:"Bearer "+token}});
- const raw=await res.text();let d;try{d=raw?JSON.parse(raw):[];}catch{d=raw}
- if(!res.ok) throw Error((d&&d.message)||(d&&d.hint)||("HTTP "+res.status));
- return d;
-}
-async function load(){
- const id=new URLSearchParams(location.search).get("id");
- if(!id) throw Error("لم يتم تحديد المشروع.");
- const projects=await get("/projects?id=eq."+encodeURIComponent(id)+"&select=*");
- const p=projects[0];
- if(!p) throw Error("المشروع غير موجود.");
- const entityReq=get("/government_entities?id=eq."+encodeURIComponent(p.government_entity_id)+"&select=id,name");
- const companyReq=p.company_id?get("/companies?id=eq."+encodeURIComponent(p.company_id)+"&select=id,name"):Promise.resolve([]);
- const importReq=get("/excel_import_staging?batch_name=eq."+encodeURIComponent("المشاريع(4).xlsx")+"&select=source_row,payload&order=source_row.asc");
- const [entities,companies,raw]=await Promise.all([entityReq,companyReq,importReq]);
- const entity=entities[0], company=companies[0];
- const payload=(raw||[]).map(x=>x.payload||{}).find(x=>String(x["اسم المشروع"]||"")===String(p.project_name||""))||{};
- const lcSpend=payload["نسبة المحتوى المحلي إلى إجمالي الصرف"];
- const lcProject=payload["نسبة المحتوى المحلي إلى قيمة المشروع"];
- const sme=payload["نسبة SME   "] ?? payload["نسبة SME"];
- const root=$("root");
- root.innerHTML=
- '<div class="hero"><h1>'+esc(p.project_name)+'</h1><div class="meta"><span>الجهة: <strong>'+esc(entity?.name||payload["الجهة الحكومية"]||"—")+'</strong></span><span>المناقصة: <strong>'+esc(p.tender_no||payload["رقم/نوع  المناقصة "]||"—")+'</strong></span></div><div class="actions" style="margin-top:15px"><a class="btn" href="projects-live.html">العودة للمشاريع</a><a class="btn primary" href="report-form.html?id='+encodeURIComponent(id)+'">+ إدخال تقرير</a></div></div>'+
- '<div class="info-grid"><div class="info-item"><small>قيمة المشروع</small><b>'+money(p.project_value)+'</b></div><div class="info-item"><small>تاريخ البدء</small><b>'+esc(p.start_date||"—")+'</b></div><div class="info-item"><small>تاريخ الانتهاء</small><b>'+esc(p.end_date||"—")+'</b></div><div class="info-item"><small>الإنجاز</small><b>'+n(p.completion_percent).toFixed(1)+'%</b></div><div class="info-item"><small>الحالة</small><b>'+esc(p.project_status||"—")+'</b></div><div class="info-item"><small>الشركة المنفذة</small><b>'+esc(company?.name||payload["الجهة المنفذة"]||"—")+'</b></div></div>'+
- '<div class="section"><div class="kpis"><div class="kpi"><div class="label">إجمالي الصرف</div><div class="value">'+money(payload["اجمالي الصرف في المشروع"])+'</div></div><div class="kpi"><div class="label">إجمالي المحتوى المحلي</div><div class="value">'+money(payload["اجمالي المحتوى المحلي في المشروع"])+'</div></div><div class="kpi"><div class="label">المحتوى المحلي / الصرف</div><div class="value">'+pct(lcSpend)+'</div></div><div class="kpi"><div class="label">المحتوى المحلي / قيمة المشروع</div><div class="value">'+pct(lcProject)+'</div></div></div></div>'+
- '<div class="grid2 section"><div class="card"><h2>العمالة والرواتب</h2>'+row("العمانيون حاليا",n(payload["عدد العمانيين حاليا"]))+row("غير العمانيين حاليا",n(payload["عدد الاجانب حاليا"]))+row("نسبة التعمين",pct(payload["نسبة التعمين"]))+row("رواتب العمانيين",money(payload["اجمالي تكلفة رواتب العمانيين"]))+row("رواتب الأجانب",money(payload["اجمالي تكلفة رواتب الاجانب"]))+'</div><div class="card"><h2>المحتوى المحلي</h2>'+row("المشتريات المحلية",money(payload["اجمالي مشتريات عمانية"]))+row("الخدمات المحلية",money(payload["اجمالي الخدمات المحلية"]))+row("عقود الباطن",money(payload["اجمالي عقود الباطن"]))+row("SME",pct(sme))+row("حالة الاستيفاء",payload["حالة الإستيفاء"]||"—")+'</div></div>'+
- '<div class="grid2 section"><div class="card"><h2>متابعة التقارير</h2>'+row("التقارير المستهدفة",payload["عدد التقارير المستهدفة"]||"—")+row("التقارير المستحقة",payload["عدد التقارير المستحقة"]||"—")+row("التقارير المستلمة",payload["عدد التقارير المستلمة"]||"—")+row("التقارير المتأخرة",payload["عدد التقارير المتأخرة"]||"—")+row("التحديث الربع سنوي",payload["تحديث الربع سنوي"]||"—")+'</div><div class="card"><h2>بيانات إضافية</h2>'+row("الاستشاري",p.consultant||payload["الاستشاري"]||"—")+row("قطاع العمل",p.work_sector||payload["قطاع العمل"]||"—")+row("المحافظة",p.governorate||"—")+row("الولاية",p.wilayat||"—")+(payload["الملاحظات"]?row("الملاحظات",payload["الملاحظات"]):"")+'</div></div>';
- $("loading").hidden=true;root.hidden=false;
-}
-load().catch(e=>{$("loading").innerHTML='<div class="alert warn"><b>تعذر تحميل المشروع</b><br>'+esc(e.message)+'</div><div style="margin-top:12px"><a class="btn primary" href="projects-live.html">العودة للمشاريع</a></div>'});
-})();
-</script></body></html>
+<main class="main"><div id="loading" class="card">جارٍ تحميل بيانات المشروع...</div><div id="root" hidden></div></main></div>
+<script src="data.js"></script><script src="app.js"></script><script src="project-live.js"></script></body></html>
