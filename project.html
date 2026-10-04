@@ -40,7 +40,7 @@ async function load(){
  const p=(await get("/projects"+q+"&select=*"))[0];
  if(!p)throw Error("المشروع غير موجود.");
  const entity=(await get("/government_entities?id=eq."+encodeURIComponent(p.government_entity_id)+"&select=id,name"))[0];
- const company=p.executing_company_id?(await get("/companies?id=eq."+encodeURIComponent(p.executing_company_id)+"&select=id,name"))[0]:null;
+ const company=p.company_id?(await get("/companies?id=eq."+encodeURIComponent(p.executing_company_id)+"&select=id,name"))[0]:null;
  const [reports,plans,results]=await Promise.all([
    get("/quarterly_reports?project_id=eq."+encodeURIComponent(id)+"&select=id,year_no,quarter_no,report_date,received_date,report_type,status,notes&order=year_no.asc,quarter_no.asc"),
    get("/local_content_plans?project_id=eq."+encodeURIComponent(id)+"&select=id,plan_date,version,duration_months,status,notes&order=created_at.desc&limit=1"),
