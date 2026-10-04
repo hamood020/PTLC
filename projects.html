@@ -16,9 +16,7 @@
 </nav></aside>
 <main class="main">
 <div class="topbar"><div class="title"><h1>المشاريع</h1><p>قائمة المشاريع مع المتابعة السريعة للتقارير والإنجاز</p></div><div class="actions"><button class="btn" id="exportBtn">تصدير البيانات</button><a class="btn primary" href="report-form.html">+ إدخال تقرير</a></div></div>
-
-<div id="message" class="card" style="margin-bottom:16px">جارٍ تحميل المشاريع...</div>
-
+<div id="message" class="card">جارٍ تحميل المشاريع...</div>
 <div id="content" hidden>
 <div class="filters">
 <div class="field search"><label>بحث</label><input id="q" placeholder="اسم المشروع أو رقم المناقصة"></div>
@@ -37,73 +35,76 @@
 <div class="footer">منصة متابعة المشاريع — بيانات حية من Supabase</div>
 </div>
 </main></div>
-
-<script src="data.js"></script><script src="app.js"></script>
+<script src="data.js"></script>
 <script>
-PTLC.ready.then(async()=>{
-  const msg=document.getElementById("message"),content=document.getElementById("content");
-  try{
-    let rows=[];
-    try{
-      rows=await PTLC.api("/project_dashboard?select=*&order=project_name.asc");
-    }catch(viewError){
-      const [projects,entities]=await Promise.all([
-        PTLC.api("/projects?select=id,project_name,government_entity_id,tender_no,project_value,start_date,end_date,project_status,work_sector,completion_percent&order=project_name.asc"),
-        PTLC.api("/government_entities?select=id,name")
-      ]);
-      const em=new Map((entities||[]).map(x=>[x.id,x.name]));
-      rows=(projects||[]).map(p=>({
-        project_id:p.id,project_name:p.project_name,government_entity:em.get(p.government_entity_id)||"—",
-        tender_no:p.tender_no,project_value:p.project_value,start_date:p.start_date,end_date:p.end_date,
-        project_status:p.project_status,work_sector:p.work_sector,
-        completion_percent:PTLC.n(p.completion_percent)/100,latest_report:null,reports_missing:0
-      }));
-    }
-    if(!rows.length) throw Error("تم الاتصال بقاعدة البيانات ولكن لم تُرجع صفحة المشاريع أي سجلات.");
-    const fill=(id,key)=>{
-      const e=document.getElementById(id);
-      e.innerHTML='<option value="">الكل</option>'+PTLC.unique(rows,key).map(v=>'<option value="'+PTLC.esc(v)+'">'+PTLC.esc(v)+'</option>').join("");
-    };
-    fill("entity","government_entity");fill("status","project_status");fill("sector","work_sector");
+(function(){
+"use strict";
+const C=window.PTLC_CONFIG||{};
+const API=C.url+"/rest/v1";
+const KEY=C.key;
+const ACCESS="icv_access_token";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const num=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
+const money=v=>num(v).toLocaleString("en-US",{maximumFractionDigits:0})+" ر.ع";
+const pct=v=>{const x=num(v);return (x*100).toFixed(1)+"%"};
+let rows=[];
 
-    function filtered(){
-      let x=rows.slice();
-      const q=document.getElementById("q").value.trim().toLowerCase();
-      const t=document.getElementById("tender").value.trim().toLowerCase();
-      const vf=PTLC.n(document.getElementById("from").value),vt=PTLC.n(document.getElementById("to").value);
-      const e=document.getElementById("entity").value,s=document.getElementById("status").value,k=document.getElementById("sector").value;
-      if(q)x=x.filter(p=>String(p.project_name||"").toLowerCase().includes(q)||String(p.tender_no||"").toLowerCase().includes(q));
-      if(t)x=x.filter(p=>String(p.tender_no||"").toLowerCase().includes(t));
-      if(e)x=x.filter(p=>p.government_entity===e);
-      if(s)x=x.filter(p=>p.project_status===s);
-      if(k)x=x.filter(p=>p.work_sector===k);
-      if(vf)x=x.filter(p=>PTLC.n(p.project_value)>=vf);
-      if(vt)x=x.filter(p=>PTLC.n(p.project_value)<=vt);
-      if(document.getElementById("ending10").checked)x=x.filter(p=>{if(!p.end_date)return false;const d=(new Date(p.end_date)-new Date())/86400000;return d>=0&&d<=10});
-      return x;
-    }
-    function draw(){
-      const x=filtered();
-      document.getElementById("count").textContent=x.length+" مشروع";
-      document.getElementById("rows").innerHTML=x.map(p=>'<tr>'+
-        '<td><a class="project-link" href="project.html?id='+encodeURIComponent(p.project_id)+'">'+PTLC.esc(p.project_name)+'</a></td>'+
-        '<td>'+PTLC.esc(p.government_entity||"—")+'</td>'+
-        '<td>'+PTLC.esc(p.tender_no||"—")+'</td>'+
-        '<td>'+PTLC.money(p.project_value)+'</td>'+
-        '<td><div class="progress"><span style="width:'+Math.min(100,PTLC.n(p.completion_percent)*100)+'%"></span></div><small>'+PTLC.n(p.completion_percent*100).toFixed(1)+'%</small></td>'+
-        '<td>'+PTLC.esc(p.latest_report||"—")+'</td>'+
-        '<td>'+PTLC.num(p.reports_missing)+'</td>'+
-        '<td>'+PTLC.status(p.project_status)+'</td></tr>').join("")||'<tr><td colspan="8">لا توجد نتائج</td></tr>';
-    }
-    ["q","entity","tender","status","sector","from","to","ending10"].forEach(id=>{
-      document.getElementById(id).addEventListener("input",draw);
-      document.getElementById(id).addEventListener("change",draw);
-    });
-    document.getElementById("exportBtn").onclick=()=>PTLC.downloadCSV(filtered(),"PTLC_Projects.csv");
-    msg.hidden=true;content.hidden=false;draw();
-  }catch(e){
-    msg.innerHTML='<div class="alert warn"><b>تعذر تحميل المشاريع</b><br>'+PTLC.esc(e.message||"خطأ غير معروف")+'</div><div style="margin-top:12px"><a class="btn primary" href="index.html">العودة للرئيسية</a></div>';
-  }
-}).catch(()=>{});
+async function get(path){
+  const token=localStorage.getItem(ACCESS);
+  if(!token) throw Error("لا توجد جلسة دخول. سجل الدخول أولاً.");
+  const res=await fetch(API+path,{
+    headers:{apikey:KEY,Authorization:"Bearer "+token}
+  });
+  const raw=await res.text(); let data;
+  try{data=raw?JSON.parse(raw):[];}catch{data=raw;}
+  if(!res.ok) throw Error((data&&data.message)||(data&&data.hint)||("HTTP "+res.status));
+  return data;
+}
+
+async function load(){
+  const projects=await get("/projects?select=id,project_name,government_entity_id,tender_no,project_value,start_date,end_date,project_status,work_sector,completion_percent&order=project_name.asc");
+  const entities=await get("/government_entities?select=id,name");
+  const em=new Map((entities||[]).map(x=>[x.id,x.name]));
+  rows=(projects||[]).map(p=>({
+    project_id:p.id,project_name:p.project_name,government_entity:em.get(p.government_entity_id)||"—",
+    tender_no:p.tender_no,project_value:p.project_value,start_date:p.start_date,end_date:p.end_date,
+    project_status:p.project_status,work_sector:p.work_sector,
+    completion_percent:num(p.completion_percent)
+  }));
+  if(!rows.length) throw Error("تم الاتصال بقاعدة البيانات، لكن لم يتم إرجاع أي مشروع.");
+  fill("entity","government_entity");fill("status","project_status");fill("sector","work_sector");
+  draw();
+  $("message").hidden=true;$("content").hidden=false;
+}
+function unique(k){return [...new Set(rows.map(x=>x[k]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),"ar"))}
+function fill(id,k){$(id).innerHTML='<option value="">الكل</option>'+unique(k).map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join("")}
+function filtered(){
+ let x=rows.slice(),q=$("q").value.trim().toLowerCase(),t=$("tender").value.trim().toLowerCase();
+ const vf=num($("from").value),vt=num($("to").value),e=$("entity").value,s=$("status").value,k=$("sector").value;
+ if(q)x=x.filter(p=>String(p.project_name||"").toLowerCase().includes(q)||String(p.tender_no||"").toLowerCase().includes(q));
+ if(t)x=x.filter(p=>String(p.tender_no||"").toLowerCase().includes(t));
+ if(e)x=x.filter(p=>p.government_entity===e);
+ if(s)x=x.filter(p=>p.project_status===s);
+ if(k)x=x.filter(p=>p.work_sector===k);
+ if(vf)x=x.filter(p=>num(p.project_value)>=vf);
+ if(vt)x=x.filter(p=>num(p.project_value)<=vt);
+ if($("ending10").checked)x=x.filter(p=>{if(!p.end_date)return false;const d=(new Date(p.end_date)-new Date())/86400000;return d>=0&&d<=10});
+ return x;
+}
+function draw(){
+ const x=filtered();
+ $("count").textContent=x.length+" مشروع";
+ $("rows").innerHTML=x.map(p=>'<tr>'+
+ '<td><a class="project-link" href="project.html?id='+encodeURIComponent(p.project_id)+'">'+esc(p.project_name)+'</a></td>'+
+ '<td>'+esc(p.government_entity)+'</td><td>'+esc(p.tender_no||"—")+'</td>'+
+ '<td>'+money(p.project_value)+'</td>'+
+ '<td><div class="progress"><span style="width:'+Math.min(100,num(p.completion_percent)*100)+'%"></span></div><small>'+pct(p.completion_percent)+'</small></td>'+
+ '<td>—</td><td>—</td><td>'+esc(p.project_status||"—")+'</td></tr>').join("")||'<tr><td colspan="8">لا توجد نتائج</td></tr>';
+}
+["q","entity","tender","status","sector","from","to","ending10"].forEach(id=>{$(id).addEventListener("input",draw);$(id).addEventListener("change",draw)});
+$("exportBtn").onclick=()=>{const x=filtered();if(!x.length)return;const cols=["project_name","government_entity","tender_no","project_value","project_status","completion_percent"];const lines=[cols,...x.map(r=>cols.map(c=>String(r[c]??"").replace(/"/g,'""')))].map(r=>r.map(v=>'"'+v+'"').join(","));const b=new Blob(["\ufeff"+lines.join("\n")],{type:"text/csv;charset=utf-8"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="PTLC_Projects.csv";a.click()};
+load().catch(e=>{$("message").innerHTML='<div class="alert warn"><b>تعذر تحميل المشاريع</b><br>'+esc(e.message)+'</div><div style="margin-top:12px"><a class="btn primary" href="login.html">تسجيل الدخول</a></div>'});
+})();
 </script>
 </body></html>
